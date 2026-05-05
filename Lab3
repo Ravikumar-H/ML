@@ -1,0 +1,46 @@
+# BCSL606
+# Program to implement Principal Component Analysis (PCA)
+# for reducing the dimensionality of the Iris dataset
+# from 4 features to 2.
+
+import pandas as pd
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+print("LAB 3")
+# Load iris dataset
+iris = load_iris()
+
+data = iris.data
+target = iris.target
+label_names = iris.target_names
+
+# Create DataFrame
+iris_df = pd.DataFrame(data, columns=iris.feature_names)
+
+# Apply PCA
+pca = PCA(n_components=2)
+data_reduced = pca.fit_transform(data)
+
+# Create reduced DataFrame
+reduced_df = pd.DataFrame(data_reduced, columns=['PC1', 'PC2'])
+reduced_df['target'] = target
+
+# Plot PCA result
+plt.figure(figsize=(8, 12))
+colors = ['r', 'g', 'b']
+
+for i, target in enumerate(np.unique(target)):
+    plt.scatter(
+        reduced_df[reduced_df['target'] == target]['PC1'],
+        reduced_df[reduced_df['target'] == target]['PC2'],
+        c=colors[i],
+        label=label_names[i]
+    )
+
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    plt.title('PCA of Iris Dataset')
+    plt.legend()
+    plt.show()
