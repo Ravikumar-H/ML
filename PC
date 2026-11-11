@@ -1,0 +1,249 @@
+Experiment 2: Static Loop Scheduling
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+    int num_iterations;
+    printf("Enter the number of iterations: ");
+    scanf("%d", &num_iterations);
+    #pragma omp parallel
+    {
+        #pragma omp for schedule(static,2)
+        for (int i = 1; i < num_iterations; i++) {
+            printf("Thread %d: iteration %d\n", omp_get_thread_num(), i);
+        }
+    }
+    return 0;
+}
+
+Experiment 3: Task-based Fibonacci
+#include <stdio.h>
+#include <omp.h>
+
+int fib(int n) {
+    int i, j;
+    if (n < 2)
+        return n;
+    else {
+        #pragma omp task shared(i) firstprivate(n)
+        i = fib(n - 1);
+
+        #pragma omp task shared(j) firstprivate(n)
+        j = fib(n - 2);
+
+        #pragma omp taskwait
+        return i + j;
+    }
+}
+
+int main() {
+    int n;
+    printf("Enter the Fibonacci number to calculate: ");
+    scanf("%d", &n);
+
+    omp_set_dynamic(0);
+    omp_set_num_threads(4);
+
+    #pragma omp parallel shared(n)
+    {
+        #pragma omp single
+        printf ("fib(%d) = %d\n", n, fib(n));
+    }
+    return 0;
+}
+
+Experiment 4: Parallel Prime Finder
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#include <math.h>
+
+int is_prime(int num) {
+    if (num <= 1) return 0;
+    if (num == 2) return 1;
+    if (num % 2 == 0) return 0;
+    for (int i = 3; i <= sqrt(num); i += 2) {
+        if (num % i == 0) return 0;
+    }
+    return 1;
+}
+
+int main() {
+    int n;
+    printf("Enter the upper limit (n) to find prime numbers: ");
+    scanf("%d", &n);
+
+    if (n < 2) {
+        printf("There are no prime numbers up to %d.\n", n);
+        return 0;
+    }
+
+    printf("\nFinding prime numbers from 1 to %d...\n", n);
+
+    double start_time = omp_get_wtime();
+    int sequential_prime_count = 0;
+    for (int i = 1; i <= n; i++) {
+        if (is_prime(i)) sequential_prime_count++;
+    }
+    double time_seq = omp_get_wtime() - start_time;
+    printf("Sequential: Found %d primes in %f seconds\n", sequential_prime_count, time_seq);
+
+    start_time = omp_get_wtime();
+    int parallel_prime_count = 0;
+    #pragma omp parallel for reduction(+:parallel_prime_count) schedule(dynamic)
+    for (int i = 1; i <= n; i++) {
+        if (is_prime(i)) parallel_prime_count++;
+    }
+    double time_par = omp_get_wtime() - start_time;
+    printf("Parallel:   Found %d primes in %f seconds\n", parallel_prime_count, time_par);
+
+    if (time_par > 0 && time_seq > 0) {
+        printf("\nSpeedup: %.2fx\n", time_seq / time_par);
+    }
+
+    return 0;
+}
+
+Experiment 5: MPI Send/Recv
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char *argv[]) {
+    int rank, size;
+    int number;
+
+    // Initialize the MPI environment
+    MPI_Init(&argc, &argv);
+
+    // Get the number of processes
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Get the rank of the process
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (size < 2) {
+        if (rank == 0) {
+            printf("This program requires at least 2 processes.\n");
+        }
+        MPI_Finalize();
+        return 0;
+    }
+
+    if (rank == 0) {
+        // Process 0 sends a number to Process 1
+        number = 42;
+        printf("Process 0 is sending number %d to Process 1\n", number);
+        MPI_Send(&number, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+    } else if (rank == 1) {
+        // Process 1 receives a number from Process 0
+        MPI_Recv(&number, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("Process 1 received number %d from Process 0\n", number);
+    }
+
+    // Finalize the MPI environment
+    MPI_Finalize();
+    return 0;
+}
+
+Experiment 6: MPI Deadlock
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char *argv[]) {
+    int rank, data_send, data_recv;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    data_send = rank;
+
+    if (rank == 0) {
+        MPI_Send(&data_send, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+        MPI_Recv(&data_recv, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    } else if (rank == 1) {
+        MPI_Send(&data_send, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        MPI_Recv(&data_recv, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    printf("Process %d received %d\n", rank, data_recv);
+
+    MPI_Finalize();
+    return 0;
+}
+
+Experiment 7: MPI Broadcast
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char** argv) {
+    int rank, data = 0;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        data = 100;
+    }
+
+    MPI_Bcast(&data, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    printf("Process %d received data: %d\n", rank, data);
+
+    MPI_Finalize();
+    return 0;
+}
+
+Experiment 8: MPI Scatter/Gather
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char** argv) {
+    int rank, size, data[4] = {10, 20, 30, 40}, recv;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    MPI_Scatter(data, 1, MPI_INT, &recv, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    recv += 1;
+    MPI_Gather(&recv, 1, MPI_INT, data, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Gathered data: ");
+        for (int i = 0; i < size; i++) printf("%d ", data[i]);
+        printf("\n");
+    }
+
+    MPI_Finalize();
+    return 0;
+}
+
+Experiment 9: MPI Reduce
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char** argv) {
+    int rank, value, sum, prod, max, min;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    value = rank + 1;
+
+    MPI_Reduce(&value, &sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&value, &prod, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+    MPI_Allreduce(&value, &max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&value, &min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Reduce SUM (only root): %d\n", sum);
+    }
+
+    printf("Allreduce PROD (rank %d): %d\n", rank, prod);
+    printf("Allreduce MAX  (rank %d): %d\n", rank, max);
+    printf("Allreduce MIN  (rank %d): %d\n", rank, min);
+
+    MPI_Finalize();
+    return 0;
+}
+
