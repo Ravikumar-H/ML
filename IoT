@@ -1,0 +1,474 @@
+Introductory Experiments
+1. To interface an LED with Arduino and write a program to turn ON the built-in LED for 1 second after every 2 seconds:
+void setup() {
+  // Initialize digital pin LED_BUILTIN as an output
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+// The loop function runs over and over again forever
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH); // Turn the LED ON
+  delay(1000);                     // Wait for 1 second (1 sec = 1000 ms)
+  digitalWrite(LED_BUILTIN, LOW);  // Turn the LED OFF by making the voltage LOW
+  delay(2000);                     // Wait for 2 seconds (2 sec = 2000 ms)
+}
+
+2. To interface an external LED with Arduino and write a program to turn ON the LED for 1 second after every second:
+void setup() {
+  // Initialize digital pin 9 as an output
+  pinMode(9, OUTPUT);
+}
+
+// The loop function runs over and over again forever
+void loop() {
+  digitalWrite(9, HIGH); // Turn the LED ON
+  delay(1000);           // Wait for 1 second (1 sec = 1000 ms)
+  digitalWrite(9, LOW);  // Turn the LED OFF
+  delay(1000);           // Wait for 1 second
+}
+
+3. Buzzer interface — High pitch sound using digitalWrite:
+const int buzzerPin = 9;
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(buzzerPin, HIGH); // Buzzer ON
+  delay(500);                    // Wait 500 ms
+  digitalWrite(buzzerPin, LOW);  // Buzzer OFF
+  delay(500);                    // Wait 500 ms
+}
+
+4. Buzzer interface — Low pitch sound using analogWrite (PWM):
+const int buzzerPin = 9;
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  analogWrite(buzzerPin, 127); // Medium duty cycle for low pitch
+  delay(500);                  // Wait 500 ms
+  analogWrite(buzzerPin, 0);   // Buzzer OFF
+  delay(500);                  // Wait 500 ms
+}
+
+5. To interface a push button (or digital IR sensor) with Arduino and write a program to turn ON the LED when the push button is pressed or when the sensor detects an object:
+#define LED_PIN 8
+#define BUTTON_PIN 7
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT);
+}
+
+void loop() {
+  if (digitalRead(BUTTON_PIN) == HIGH) { // Button pressed
+    digitalWrite(LED_PIN, HIGH);         // Turn LED ON
+  } else {
+    digitalWrite(LED_PIN, LOW);          // Turn LED OFF
+  }
+}
+
+Main Lab Experiments (BCS701)
+Experiment 1
+Question: Develop a program to blink 5 LEDs back and forth.
+const int ledPins[] = {2, 3, 4, 5, 6}; // LEDs connected to pins 2, 3, 4, 5, 6
+const int numLeds = 5;                 // Number of LEDs
+
+void setup() {
+  // Set all the LED pins as OUTPUT
+  for (int i = 0; i < numLeds; i++) {
+    pinMode(ledPins[i], OUTPUT);
+  }
+}
+
+void loop() {
+  // Scroll from left to right
+  for (int i = 0; i < numLeds; i++) {
+    digitalWrite(ledPins[i], HIGH); // Turn on current LED
+    delay(200);                     // Wait for 200 ms
+    digitalWrite(ledPins[i], LOW);  // Turn off current LED
+  }
+
+  // Scroll from right to left
+  for (int i = numLeds - 1; i >= 0; i--) {
+    digitalWrite(ledPins[i], HIGH); // Turn on current LED
+    delay(200);                     // Wait for 200 ms
+    digitalWrite(ledPins[i], LOW);  // Turn off current LED
+  }
+}
+
+Experiment 2
+Question: Develop a program to interface a relay with an Arduino board.
+void setup() {
+  pinMode(11, OUTPUT);
+}
+
+void loop() {
+  // Turn ON relay
+  digitalWrite(11, HIGH);
+  delay(2000); // Wait 2 seconds
+
+  // Turn OFF relay
+  digitalWrite(11, LOW);
+  delay(2000); // Wait 2 seconds
+}
+
+Experiment 3
+Question: Develop a program to deploy an intrusion detection system using Ultrasonic and sound sensors.
+#define PIEZO_PIN 9
+const int trigger = 6;
+const int echo = 7;
+const int soundPin = A0; // Analog sound sensor pin
+
+float distance;
+float dist_inches;
+
+// Thresholds
+const float DIST_THRESHOLD = 5.0; // inches
+const int SOUND_THRESHOLD = 520;  // adjust based on ambient noise (0-1023 ADC)
+
+void setup() {
+  Serial.begin(9600);
+  // Settings for ultrasonic sensor
+  pinMode(trigger, OUTPUT);
+  pinMode(echo, INPUT);
+  pinMode(PIEZO_PIN, OUTPUT);
+}
+
+void loop() {
+  // --- Ultrasonic measurement ---
+  digitalWrite(trigger, LOW);
+  delayMicroseconds(5);
+  digitalWrite(trigger, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigger, LOW);
+
+  distance = pulseIn(echo, HIGH);
+  distance = distance * 0.0001657; // convert to meters (used below for inches)
+  dist_inches = distance * 39.37;  // convert to inches
+
+  // --- Sound measurement ---
+  int soundValue = analogRead(soundPin);
+
+  // --- Intrusion Detection ---
+  if (dist_inches < DIST_THRESHOLD && soundValue > SOUND_THRESHOLD) {
+    // Intrusion confirmed: both sensors triggered
+    tone(PIEZO_PIN, 1500);
+    delay(200);
+    noTone(PIEZO_PIN);
+    Serial.print("Intrusion Detected! Object with sound at distance: ");
+    Serial.print(dist_inches);
+    Serial.println(" in");
+  } else if (dist_inches < DIST_THRESHOLD) {
+    Serial.print("Object detected at distance: ");
+    Serial.print(dist_inches);
+    Serial.println(" in");
+  } else if (soundValue > SOUND_THRESHOLD) {
+    Serial.println("Sound detected!");
+  } else {
+    Serial.println("No intrusion detected.");
+  }
+
+  delay(200);
+}
+
+(Program from pages 17–18.)
+Experiment 4
+Question: Develop a program to control a DC motor with an Arduino board.
+void setup() {
+  pinMode(11, OUTPUT);
+}
+
+void loop() {
+  // Turn ON relay
+  digitalWrite(11, HIGH);
+  delay(2000); // Wait 2 seconds
+
+  // Turn OFF relay
+  digitalWrite(11, LOW);
+  delay(2000); // Wait 2 seconds
+}
+
+Experiment 5
+Question: Develop a program to deploy smart street light systems using LDR sensors.
+void setup() {
+  pinMode(8, INPUT);
+  pinMode(9, OUTPUT);
+  Serial.begin(9600); // Initialize serial monitor
+}
+
+void loop() {
+  int temp = digitalRead(8);   // Assign value of LDR sensor to a temporary variable
+  Serial.println("Intensity="); // Print on serial monitor
+  Serial.println(temp);        // Display output on serial monitor
+  delay(300);
+
+  if (temp == HIGH)            // HIGH means light got blocked
+    digitalWrite(9, HIGH);     // If light is not present, LED ON
+  else
+    digitalWrite(9, LOW);      // If light is present, LED OFF
+}
+
+Experiment 6
+Question: Develop a program to classify dry and wet waste with the Moisture sensor (DHT22).
+// Define the pin where the sensor is connected
+const int sensorPin = A1; // Analog pin A1 for the soil moisture sensor
+const int ledPin = 13;    // Digital pin 13 for an alert LED (optional)
+
+// Define moisture threshold values
+const int dryThreshold = 800; // Higher values indicate dry soil
+const int wetThreshold = 500; // Lower values indicate wet soil
+
+void setup() {
+  // Initialize the serial communication
+  Serial.begin(9600);
+  // Set the LED pin as output
+  pinMode(ledPin, OUTPUT);
+  Serial.println("Soil Moisture Sensor Test Starting...");
+}
+
+void loop() {
+  // Read the sensor value
+  int sensorValue = analogRead(sensorPin);
+
+  // Print the sensor value for debugging
+  Serial.print("Soil Moisture Level: ");
+  Serial.println(sensorValue);
+
+  // Check soil moisture levels and take action
+  if (sensorValue > dryThreshold) {
+    Serial.println("Soil is DRY. Watering required.");
+    digitalWrite(ledPin, HIGH); // Turn on the LED as an alert
+  } else {
+    Serial.println("Soil is WET.");
+    digitalWrite(ledPin, LOW);  // Turn off the LED
+  }
+}
+
+(Program from pages 24–25.)
+Experiment 7
+Question: Develop a program to read the pH value of various substances like milk, lime and water.
+Note: Although Experiment 7 is listed in the index on page 1, its section and program code are missing from the provided manual (the document skips directly from Experiment 6 to Experiment 8).
+Experiment 8
+Question: Develop a program to detect the gas leakage in the surrounding environment.
+// EAZYTRONIC.COM
+int Smoke_Sensor = 0;
+
+void setup() {
+  pinMode(A0, INPUT);
+  Serial.begin(9600);
+  pinMode(5, OUTPUT);
+  pinMode(7, OUTPUT);
+}
+
+void loop() {
+  Smoke_Sensor = analogRead(A0);
+  Serial.println(Smoke_Sensor);
+
+  if (Smoke_Sensor >= 60) {
+    digitalWrite(5, HIGH);
+  } else {
+    digitalWrite(5, LOW);
+  }
+
+  if (Smoke_Sensor >= 65) {
+    digitalWrite(7, HIGH);
+  } else {
+    digitalWrite(7, LOW);
+  }
+
+  delay(10); // Delay a little bit to improve simulation performance
+}
+
+(Program from pages 26–27.)
+Experiment 9
+Question: Develop a program to demonstrate weather station readings using Arduino.
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <dht11.h>
+
+#define DHT11PIN 4
+dht11 DHT11;
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+void setup() {
+  Serial.begin(115200);
+  // pinMode(7, OUTPUT); // To provide power supply to DHT
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  delay(2000);
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+}
+
+void loop() {
+  delay(5000);
+
+  // Read temperature and humidity
+  int chk = DHT11.read(DHT11PIN);
+  // digitalWrite(7, HIGH); // To provide supply voltage to DHT
+
+  Serial.print("Humidity (%): ");
+  Serial.println((float)DHT11.humidity, 2);
+  Serial.print("Temperature (C): ");
+  Serial.println((float)DHT11.temperature, 2);
+
+  float t = DHT11.temperature;
+  float h = DHT11.humidity;
+
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT sensor!");
+  }
+
+  // Clear display
+  display.clearDisplay();
+
+  // Display temperature
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("Temperature: ");
+  display.setTextSize(2);
+  display.setCursor(0, 10);
+  display.print(t);
+  display.print(" ");
+  display.setTextSize(1);
+  display.cp437(true);
+  display.write(167);
+  display.setTextSize(2);
+  display.print("C");
+
+  // Display humidity
+  display.setTextSize(1);
+  display.setCursor(0, 35);
+  display.print("Humidity: ");
+  display.setTextSize(2);
+  display.setCursor(0, 45);
+  display.print(h);
+  display.print(" %");
+
+  display.display();
+}
+
+(Program from pages 28–29.)
+Experiment 10
+Question: Develop a program to set up a UART protocol and pass a string through the protocol.
+void setup() {
+  pinMode(8, INPUT_PULLUP); // Set push button pin as input
+  pinMode(13, OUTPUT);      // Set LED pin as output
+  digitalWrite(13, LOW);    // Switch off LED pin
+  Serial.begin(9600);       // Initialize UART with baud rate of 9600 bps
+}
+
+void loop() {
+  if (Serial.available()) {
+    char data_rcvd = Serial.read(); // Read one byte from serial buffer and save to data_rcvd
+    if (data_rcvd == '1') digitalWrite(13, HIGH); // Switch LED On
+    if (data_rcvd == '0') digitalWrite(13, LOW);  // Switch LED Off
+  }
+
+  if (digitalRead(8) == HIGH)
+    Serial.write('0'); // Send the char '0' to serial if button is not pressed
+  else
+    Serial.write('1'); // Send the char '1' to serial if button is pressed
+}
+
+(Program from pages 31–32.)
+Experiment 11
+Question: Develop a water level depth detection system using Ultrasonic sensors.
+#define TRIG 9  // Ultrasonic sensor TRIG pin -> Arduino pin 9
+#define ECHO 10 // Ultrasonic sensor ECHO pin -> Arduino pin 10
+
+long duration;
+float distance;
+float tankDepth = 30.0; // Tank depth in cm (change as per your tank)
+float waterLevel;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+}
+
+void loop() {
+  // Send ultrasonic pulse
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  // Measure echo time
+  duration = pulseIn(ECHO, HIGH);
+
+  // Convert to distance (cm)
+  distance = duration * 0.034 / 2;
+
+  // Calculate water level
+  waterLevel = tankDepth - distance;
+
+  // Prevent negative values
+  if (waterLevel < 0) waterLevel = 0;
+  if (waterLevel > tankDepth) waterLevel = tankDepth;
+
+  // Print results
+  Serial.print("Distance ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  delay(1000); // Update every second
+}
+
+(Program from pages 33–34.)
+Experiment 12
+Question: Develop a program to simulate interfacing with the keypad module to record the keystrokes.
+#include <Keypad.h>
+
+// Define number of rows and columns for 4x3 Keypad
+const byte ROWS = 4; // four rows
+const byte COLS = 3; // three columns
+
+// Define the key map (layout of the keypad)
+char keys[ROWS][COLS] = {
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'*', '0', '#'}
+};
+
+// Connect keypad ROW0, ROW1, ROW2, ROW3 -> Arduino pins
+byte rowPins[ROWS] = {9, 8, 7, 6};
+
+// Connect keypad COL0, COL1, COL2 -> Arduino pins
+byte colPins[COLS] = {5, 4, 3};
+
+// Create keypad object
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Press keys on keypad...");
+}
+
+void loop() {
+  char key = keypad.getKey(); // Get the key pressed
+
+  if (key) { // If a key is pressed
+    Serial.print("Key Pressed: ");
+    Serial.println(key);
+  }
+}
+
+(Program from pages 35–36.)
